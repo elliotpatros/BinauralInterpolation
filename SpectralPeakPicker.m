@@ -1,4 +1,4 @@
-function [ output_args ] = SpectralPeakPicker( input_args )
+function SpectralPeakPicker()
 %SPECTRALPEAKPICKER Summary of this function goes here
 %   Detailed explanation goes here
 
