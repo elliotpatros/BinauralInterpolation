@@ -25,9 +25,11 @@ X = X ./ max(X);                            % normalize fft
 X = gain_to_dB(X);                          % convert magnitude to dB.
 
 %% pick peaks
-% remove bins that aren't possibly peaks
-[~, bins] = sort(X, 'descend');             % sort frequency bins from loudest to quietest
-bins = bins(X(bins) >= noiseFloor);         % remove bins that are too quiet
+% sort frequency bins from loudest to quietest
+[~, bins] = sort(X, 'descend');             
+
+% remove bins that are too quiet
+bins = bins(X(bins) >= noiseFloor);         
 
 % remove bins that are within minPeakDistance of louder peaks
 binWidth = freq_to_bin(minPeakDistance, fs, nfft);
