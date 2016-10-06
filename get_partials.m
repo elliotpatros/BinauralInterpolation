@@ -14,6 +14,8 @@ nfft = 2^nextpow2(L);
 normalizeBy = 1 / max(abs(x));
 x = x .* normalizeBy;
 
+x = x .* hanning(L);
+
 % get real fft
 X = abs(fft(x, nfft));
 X = X ./ max(X);
@@ -31,6 +33,7 @@ for n = 1:length(loudestFreqs)
 end
 
 %% plot
+clf;
 faxis = linspace(1, nyquist, nfft / 2)';
 plot(faxis, X);
 axis([0, nyquist, (noiseFloor - 12), 0]);
