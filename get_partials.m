@@ -1,10 +1,5 @@
-%% get user input
-clear all;
-clc;
-
-soundfile = 'cello.aiff';
-noiseFloor = -42;
-minPeakDistance = 80;
+function [loudestFreqs, magnitudesByFreq] = get_partials(soundfile, noiseFloor, minPeakDistance)
+% GET_PARTIALS finds and sorts loudest partials in a sound file
 
 %% get audio
 [x, fs] = audioread(['./AudioSamples/' soundfile]);
@@ -42,3 +37,7 @@ plot(faxis, X);
 axis([0, nyquist, (noiseFloor - 12), 0]);
 hold all;
 plot(bin_to_freq(peaks, fs, nfft), X(round(peaks)), 'v');
+
+
+end
+
