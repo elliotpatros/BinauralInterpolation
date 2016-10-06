@@ -1,0 +1,26 @@
+%% get audio input
+[x, fs] = audioread('./AudioSamples/cello-f2.aiff');
+
+%% get sampling rate info and duration
+rfs = 1/fs;
+nyquist = fs / 2;
+
+L = length(x);
+nfft = 2^nextpow2(L);
+seconds = nfft*rfs;
+
+
+%% do fft
+% get real fft of input
+X = abs(fft(x, nfft * 2));
+% get frequencies below nyquist
+X = X(1:end/2);
+% normalize
+X = X ./ nfft;
+
+% plot with x as frequency
+faxis = linspace(0, nyquist, nfft)';
+
+%% plot
+plot(X);
+% plot(faxis, X);
