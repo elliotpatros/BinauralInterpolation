@@ -6,7 +6,6 @@ function [loudestFreqs, magnitudesByFreq] = get_partials(soundfile, noiseFloor, 
 
 %% get fft of input
 % fft parameters
-rfs = 1/fs;
 nyquist = fs / 2;
 L = length(x);
 nfft = 2^nextpow2(L);
@@ -36,7 +35,7 @@ faxis = linspace(1, nyquist, nfft / 2)';
 plot(faxis, X);
 axis([0, nyquist, (noiseFloor - 12), 0]);
 hold all;
-plot(bin_to_freq(peaks, fs, nfft), X(round(peaks)), 'v');
+plot(loudestFreqs, magnitudesByFreq, 'v');
 
 
 end
