@@ -1,44 +1,28 @@
-%% get user input
-clear all;
-clc;
+clearvars;
+addpath(genpath('.'));
 
-soundfile = 'cello.aiff';
-noiseFloor = -42;
-minPeakDistance = 80;
+%% get user input
+soundfile = '400Hz.wav';
+noiseFloor = -Inf;
+minPeakWidth = 4000;
 
 %% get audio
-[x, fs] = audioread(['./AudioSamples/' soundfile]);
+[x, fs] = audioread(soundfile);
 
-%% get fft of input
-% fft parameters
-rfs = 1/fs;
-nyquist = fs / 2;
-L = length(x);
-nfft = 2^nextpow2(L);
+%% do test
+[Y, nfft] = do_fft(x, true);
+peakBins = get_peak_bins(Y, noiseFloor);
+peakBins = sort_loudest_peaks(Y, peakBins);
+peakBins = filter_peaks_by_width(Y, peakBins, minPeakWidth, fs, nfft);
 
-% normalize input
-normalizeBy = 1 / max(abs(x));
-x = x .* normalizeBy;
-
-% get real fft
-X = abs(fft(x, nfft));
-X = X ./ max(X);
-X = X(1:end/2);
-X = gain_to_dB(X);
-
-%% pick peaks
-peaks = spectral_peak_picker(X, fs, noiseFloor, minPeakDistance);
-loudestFreqs = bin_to_freq(peaks, fs, nfft);
-magnitudesByFreq = X(round(peaks));
-
-disp(['peaks in ' soundfile ', sorted by loudness...']);
-for n = 1:length(loudestFreqs)
-    disp(['frequency ' num2str(loudestFreqs(n)) ' = ' num2str(magnitudesByFreq(n)) ' dB.']);
-end
+%% organize results
+peakFreqs = bin_to_freq(peakBins, fs, nfft);
+magnitudes = Y(round(peakBins));
 
 %% plot
-faxis = linspace(1, nyquist, nfft / 2)';
-plot(faxis, X);
-axis([0, nyquist, (noiseFloor - 12), 0]);
-hold all;
-plot(bin_to_freq(peaks, fs, nfft), X(round(peaks)), 'v');
+nBins = length(Y);
+faxis = linspace(0, bin_to_freq(nBins, fs, nfft), nBins)';
+plot(faxis, Y);
+hold on;
+plot(peakFreqs, Y(peakBins), 'v');
+hold off;

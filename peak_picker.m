@@ -4,14 +4,15 @@ clc;
 clf;
 
 %% user parameters
-soundfile = 'cello.aiff'; 
-maxNumPeaks = 12;
-noiseFloor = -42;
-minPeakDistance = 80;
-normalizeResults = true;
+soundfile = 'air sounds/Bb3_straight.wav'; 
+maxNumPeaks = 24;                           % max number of peaks you want
+noiseFloor = -42;                           % the quietest peak you want (dB.)
+minPeakDistance = 40;                       % how wide do you think peaks are (Hz.)?
+normalizeResults = true;                    % should results be noramlized? (true or false)
 
 %% get input and stuff
 [x, fs] = audioread(['./AudioSamples/' soundfile]);
+x = sum(x, 2);                              % mix to mono
 L = length(x);                              % duration of soundfile (samples)
 rfs = 1/fs;                                 % duration of a sample (seconds)
 nyquist = fs / 2;                           % nyquist frequency (Hz)
@@ -71,13 +72,13 @@ end
 % print results
 disp(['peaks in ' soundfile ', sorted by loudness...']);
 for n = 1:length(loudestFreqs)
-    disp(['frequency ' num2str(loudestFreqs(n)) ' = ' num2str(magnitudes(n)) ' dB.']);
+    disp([num2str(n), ', ',  num2str(loudestFreqs(n)), ', ', num2str(dB_to_gain(magnitudes(n)))]);
 end
 
 %% plot
 clf;
 faxis = linspace(1, nyquist, nfft / 2)';
-plot(faxis, X);
-axis([0, nyquist, (noiseFloor - 12), max(X) + 3]);
+plot(faxis, dB_to_gain(X));
+% axis([0, nyquist, (noiseFloor - 12), max(X) + 3]);
 hold all;
-plot(loudestFreqs, magnitudes, 'v');
+plot(loudestFreqs, dB_to_gain(magnitudes), 'v');
