@@ -1,0 +1,17 @@
+clearvars;
+addpath(genpath('.'));
+
+%% get user input
+azim = 5;
+elev = 0;
+
+%% get audio
+[lx, rx, fs] = load_binaural(5, 0);
+
+%% pick peaks
+[lY, lBins, lFreqs, lDB] = pick_peaks(lx, fs);
+[rY, rBins, rFreqs, rDB] = pick_peaks(rx, fs);
+
+%% plot
+subplot(21
+plot_peaks(lY, lBins, fs);
