@@ -5,9 +5,9 @@ nBins = length(Y);
 nfft = nBins * 2;
 freqs = bin_to_freq(bins, fs, nfft);
 faxis = linspace(0, bin_to_freq(nBins, fs, nfft), nBins)';
-plot(faxis, dB_to_gain(Y));
+plot(faxis, Y);
 hold on;
-plot(freqs, dB_to_gain(Y(bins)), 'v');
+plot(freqs, Y(bins), 'v');
 hold off;
 
 end
