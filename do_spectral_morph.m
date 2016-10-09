@@ -2,122 +2,64 @@ clearvars;
 addpath(genpath('.'));
 
 %% user input
-azim1 = 5;
-elev1 = 0;
-azim2 = 15;
-elev2 = 0;
+az1 = 5;
+el1 = 0;
+az2 = 15;
+el2 = 0;
+weight = 0.5;
+minDist = 3;
+shouldplot = true;
 
 %% get audio
-[x1, ~, fs] = load_binaural(azim1, elev1);
-x2 = load_binaural(azim2, elev2);
+[x1, ~, fs] = load_binaural(az1, el1);
+x2 = load_binaural(az2, el2);
 
-%% pick peaks
-[Y1, peaks1] = pick_peaks(x1, fs);
-[Y2, peaks2] = pick_peaks(x2, fs);
+%% pick and peaks
+Y1 = do_fft(x1, false);             % spectrum
+p1 = get_peak_bins(Y1, -Inf);       % peak bins
+s1 = sort_loudest_peaks(Y1, p1);    % sorted bins (loudest first)
+l1 = length(p1);                    % length of p1
 
+Y2 = do_fft(x2, false);             % spectrum
+p2 = get_peak_bins(Y2, -Inf);       % peak bins
+s2 = sort_loudest_peaks(Y2, p2);    % sorted bins (loudest first)
+l2 = length(p2);                    % length of p2
 
-%% SPECTRAL MORPH
-%% user stuff
-weight = 0.5;
-
-%% find which fft has fewer peaks (match from fewer to more)
-nBins = length(Y1);
-nPeaks1 = length(peaks1);
-nPeaks2 = length(peaks2);
-hasFewer = 1;
-
-if nPeaks2 < nPeaks1
-    hasFewer = 2;
+%% nearest neighbor assignment
+minNumPeaks = min(l1, l2);
+maxNumPeaks = max(l1, l2);
+m = zeros(l2, 1);                  % matched bin indexes
+for n = 1:minNumPeaks
+    % find nearest peak
+    [~, c] = min(abs(s2 - s1(n)));
+    dist = abs(s1(n) - s2(c));
+    
+    % record matched peak (or no match if the closest is too far)
+    if dist < minDist                 
+        m(n) = c;
+    end
 end
 
-%% match peaks
-if hasFewer == 1
-    sourcePeaks = peaks1;
-    sourceY = Y1;
-    targetPeaks = peaks2;
-    targetY = Y2;
-else
-    sourcePeaks = peaks2;
-    sourceY = Y2;
-    targetPeaks = peaks1;
-    targetY = Y1;
+% plot progress
+if shouldplot
+    for n = 1:minNumPeaks
+        clf;
+        plot(Y1);
+        hold on;
+        plot(p1, Y1(p1), 'v');
+        plot(Y2);
+        plot(p2, Y2(p2), 'v');
+        
+        if m(n) ~= 0
+            haxis = [s1(n), s2(m(n))];
+        else
+            haxis = [s1(n), s1(n)];
+        end
+        
+        vaxis = [Y1(haxis(1)), Y2(haxis(2))];
+        plot(haxis, vaxis, 'o', 'MarkerSize', 10);
+        drawnow;
+        pause;
+    end
 end
-    
-% find closest peak to nth loudest partial
-%%
-plot_peaks(Y1, peaks1, fs);
-hold on;
-plot_peaks(Y2, peaks2, fs);
-hold on;
-drawnow;
-
-%%
-BIN = 1; MAG = 2;
-newPeaks = zeros(length(sourcePeaks), 2);
-n = 1;
-while n < length(sourcePeaks)
-    % find the closest target peak to the nth loudest source peak
-    sourceBin = sourcePeaks(n);
-    [~, c] = min(abs(targetPeaks - sourceBin));
-    
-    % interpolation bin and magnitude
-    targetBin = targetPeaks(n);
-    sourceMag = sourceY(sourceBin);
-    targetMag = targetY(targetBin);
-    newPeaks(n, BIN) = lin_int([sourceBin, targetBin], weight);
-    newPeaks(n, MAG) = lin_int([sourceMag, targetMag], weight);
-    
-    plot(bin_to_freq(newPeaks(n, BIN), fs, nBins * 2), newPeaks(n, MAG), '*');
-    hold on;
-    drawnow;
-    pause;
-    
-    
-    n = n + 1;
-end
-% BIN = 1; MAG = 2;
-% nFewerPeaks = length(sourcePeaks);
-% newPeaks = zeros(nFewerPeaks, 2); % bin, mag
-% n = 1;
-% while n < length(sourcePeaks)
-%     % find closest bin to source
-%     sourceBin = sourcePeaks(n);
-%     [~, c] = min(abs(targetPeaks - sourceBin));
-%     
-%     % interpolate bin and magnitude by weight
-%     targetBin = targetPeaks(c);
-%     sourceMag = sourceY(sourceBin);
-%     targetMag = targetY(targetBin);
-%     newPeaks(n, BIN) = lin_int([sourceBin, targetBin], weight);
-%     newPeaks(n, MAG) = lin_int([sourceMag, targetMag], weight);
-%     n = n + 1;
-% end
-
-
-
-%% plot
-% plot_peaks(Y1, peaks1, fs);
-% hold on;
-% plot_peaks(Y2, peaks2, fs);
-hold on;
-plot(bin_to_freq(newPeaks(:, BIN), fs, nBins * 2), newPeaks(:, MAG), '*');
-hold off;
-
-%% crossfade residual
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
