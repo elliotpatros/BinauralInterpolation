@@ -4,7 +4,7 @@ addpath(genpath('.'));
 %% get user input
 soundfile = '400Hz.wav';
 noiseFloor = -72;
-minPeakWidth = 0;
+minPeakWidth = 400;
 
 %% get audio
 [x, fs] = audioread(soundfile);
