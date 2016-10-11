@@ -8,7 +8,6 @@ az2 = 15;
 el2 = 0;
 weight = 0.5;
 minDist = 3;
-shouldplot = true;
 
 %% get audio
 [x1, ~, fs] = load_binaural(az1, el1);
@@ -26,51 +25,44 @@ s2 = sort_loudest_peaks(Y2, p2);    % sorted bins (loudest first)
 l2 = length(p2);                    % length of p2
 
 %% nearest neighbor assignment
-minNumPeaks = min(l1, l2);
 maxNumPeaks = max(l1, l2);
-m1 = zeros(l1, 1);
-m2 = zeros(l2, 1);                  % matched bin indexes
-for n = 1:l1
-    % find nearest peak
-    [~, c] = min(abs(s2 - s1(n)));
-    if abs(s1(n) - s2(c)) < minDist
-        m2(n) = c;
-    end
+if l2 < maxNumPeaks
+    source = s1;
+    target = s2;
+    sY = Y1;
+    tY = Y2;
+    longer = 1;
+else
+    source = s2;
+    target = s1;
+    sY = Y2;
+    tY = Y1;
+    longer = 2;
 end
-for n = 1:l2
-    % find nearest peak
-    [~, c] = min(abs(s1 - s2(n)));
-    if abs(s2(n) - s1(c)) < minDist
-        m1(n) = c;
+
+m = zeros(maxNumPeaks, 1);
+for n = 1:maxNumPeaks
+    [~, c] = min(abs(target - source(n)));
+    if abs(source(n) - target(c)) < minDist
+        m(n) = c;
     end
 end
 
-% plot progress
-if shouldplot
-    for n = 1:maxNumPeaks
-        % plot all peaks from both signals
-        clf; plot([Y1 Y2]); hold on;
-        plot(p1, Y1(p1), 'v', p2, Y2(p2), 'v');
-        
-        % plot matches
-        if n <= l1
-            if m1(n) ~= 0
-                haxis = [s1(m1(n)), s2(n)]; disp('A');
-            else
-                haxis = [s1(n), s1(n)]; disp('C');
-            end
-        else
-            if m2(n) ~= 0
-                haxis = [s1(n), s2(m2(n))]; disp('B');
-            else
-                haxis = [s2(n), s2(n)]; disp('C');
-            end
-        end
-        
-        vaxis = [Y1(haxis(1)), Y2(haxis(2))];
-        plot(haxis, vaxis, 'or', 'MarkerSize', 10);
-        drawnow;
-        pause;
-    end
-end
+%% plot results
+for n = 1:maxNumPeaks
+    % plot all peaks from both signals
+    clf; plot([Y1 Y2]); hold on;
+    plot(p1, Y1(p1), 'v', p2, Y2(p2), 'v');
 
+    % plot matches
+    if m(n) ~= 0
+        haxis = [source(n), target(m(n))];
+    else
+        haxis = [source(n), source(n)];
+    end
+
+    vaxis = [sY(haxis(1)), tY(haxis(2))];
+    plot(haxis, vaxis, 'or', 'MarkerSize', 10);
+    drawnow;
+    pause;
+end
