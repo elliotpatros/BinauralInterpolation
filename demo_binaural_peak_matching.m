@@ -28,36 +28,47 @@ l2 = length(p2);                    % length of p2
 %% nearest neighbor assignment
 minNumPeaks = min(l1, l2);
 maxNumPeaks = max(l1, l2);
-m = zeros(l2, 1);                  % matched bin indexes
-for n = 1:minNumPeaks
+m1 = zeros(l1, 1);
+m2 = zeros(l2, 1);                  % matched bin indexes
+for n = 1:l1
     % find nearest peak
     [~, c] = min(abs(s2 - s1(n)));
-    dist = abs(s1(n) - s2(c));
-    
-    % record matched peak (or no match if the closest is too far)
-    if dist < minDist                 
-        m(n) = c;
+    if abs(s1(n) - s2(c)) < minDist
+        m2(n) = c;
+    end
+end
+for n = 1:l2
+    % find nearest peak
+    [~, c] = min(abs(s1 - s2(n)));
+    if abs(s2(n) - s1(c)) < minDist
+        m1(n) = c;
     end
 end
 
 % plot progress
 if shouldplot
-    for n = 1:minNumPeaks
-        clf;
-        plot(Y1);
-        hold on;
-        plot(p1, Y1(p1), 'v');
-        plot(Y2);
-        plot(p2, Y2(p2), 'v');
+    for n = 1:maxNumPeaks
+        % plot all peaks from both signals
+        clf; plot([Y1 Y2]); hold on;
+        plot(p1, Y1(p1), 'v', p2, Y2(p2), 'v');
         
-        if m(n) ~= 0
-            haxis = [s1(n), s2(m(n))];
+        % plot matches
+        if n <= l1
+            if m1(n) ~= 0
+                haxis = [s1(m1(n)), s2(n)]; disp('A');
+            else
+                haxis = [s1(n), s1(n)]; disp('C');
+            end
         else
-            haxis = [s1(n), s1(n)];
+            if m2(n) ~= 0
+                haxis = [s1(n), s2(m2(n))]; disp('B');
+            else
+                haxis = [s2(n), s2(n)]; disp('C');
+            end
         end
         
         vaxis = [Y1(haxis(1)), Y2(haxis(2))];
-        plot(haxis, vaxis, 'o', 'MarkerSize', 10);
+        plot(haxis, vaxis, 'or', 'MarkerSize', 10);
         drawnow;
         pause;
     end
