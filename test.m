@@ -3,11 +3,11 @@ clearvars;
 addpath(genpath('.'));
 
 %% weight
-for weight = linspace(0, 1, 1000)
+for weight = linspace(1, 0, 1000)
 
 %% fake peaks
 A = [linspace(-4, 10, 200) linspace(9, 1, 100)];
-B = [linspace(2, 11, 5) linspace(12, -1, 8)];
+B = [linspace(2, 11, 50) linspace(12, -1, 80)];
 
 %% lengths
 LA = length(A);
@@ -27,29 +27,29 @@ newPeak(newL) = weighted_mean(A(end), B(end), weight);
 newPeak(newMaxi) = weighted_mean(A(maxAi), B(maxBi), weight);
 
 %% upward slope
-Aup = A(2:maxAi-1);
-Bup = B(2:maxBi-1);
+Aup = A(1:maxAi);
+Bup = B(1:maxBi);
 from = 2;
 thru = newMaxi-1;
-Ascale = length(Aup) / length(from:thru);
-Bscale = length(Bup) / length(from:thru);
+Ascale = (length(Aup) - 2) / length(from:thru);
+Bscale = (length(Bup) - 2) / length(from:thru);
 for n = from:thru
-    pos = (n - from) + 1;
+    pos = (n - from) + 2;
     An = cub_int(Aup, pos * Ascale);
     Bn = cub_int(Bup, pos * Bscale);
     newPeak(n) = weighted_mean(An, Bn, weight);
 end
 
 %% downward slope
-Adn = A(maxAi+1:end-1);
-Bdn = B(maxBi+1:end-1);
+Adn = A(maxAi:end);
+Bdn = B(maxBi:end);
 from = newMaxi + 1;
 thru = newL - 1;
-Ascale = length(Adn) / length(from:thru);
-Bscale = length(Bdn) / length(from:thru);
+Ascale = (length(Adn) - 2) / length(from:thru);
+Bscale = (length(Bdn) - 2) / length(from:thru);
 
 for n = from:thru
-    pos = (n - from) + 1;
+    pos = (n - from) + 2;
     An = cub_int(Adn, pos * Ascale);
     Bn = cub_int(Bdn, pos * Bscale);
     newPeak(n) = weighted_mean(An, Bn, weight);
@@ -65,6 +65,5 @@ toplot(3, 1:newL) = newPeak;
 plot(toplot')
 
 drawnow;
-% pause(0.01)
 
 end
