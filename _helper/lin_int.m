@@ -3,9 +3,11 @@ function y = lin_int(array, position)
 
 n = floor(position);
 delta = position - n;
-n = n + 1;
 
-y = (1 - delta) * array(n) + delta * array(n + 1);
+lhs = array(max(n, 1));
+rhs = array(min(n + 1, length(array)));
+
+y = (1 - delta) * lhs + delta * rhs;
 
 end
 
