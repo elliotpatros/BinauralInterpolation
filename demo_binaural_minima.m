@@ -45,26 +45,27 @@ boundaries = zeros(nPeaks, 2);
 llimits = [1; peaks];
 rlimits = [peaks; Ldb];
 for n = 1:nPeaks
-    % find boundary to left of nth peak
+    plot(Ydb); 
+    hold on;
+    plot(peaks, Ydb(peaks), 'ro', 'MarkerSize', 10);
+    
     lhs = llimits(n);
     rhs = rlimits(n);
     [~, l] = min(Ydb(lhs:rhs));
     l = l + (lhs - 1);
+    plot(l, Ydb(l), 'g*');
+    drawnow;
+    pause;
     
-    % find boundary to right of nth peak
     lhs = llimits(n + 1);
     rhs = rlimits(n + 1);
     [~, r] = min(Ydb(lhs:rhs));
     r = r + (lhs - 1);
-    
-    % store boundaries for nth peak
     boundaries(n, :) = [l r];
+    
+    
+    plot(r, Ydb(r), 'r*');
+    hold off;
+    drawnow;
+    pause;
 end
-
-plot(Ydb); 
-hold on;
-plot(peaks, Ydb(peaks), 'ro', 'MarkerSize', 10);
-plot(boundaries, Ydb(boundaries), 'r*');
-hold off;
-
-
