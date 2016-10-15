@@ -23,7 +23,7 @@ x2 = load_binaural(az2, el2);
 
 %% do fft
 L = length(x1);
-nfft = 2^nextpow2(L);
+nfft = L; %2^nextpow2(L);
 
 % get fft
 Y1 = fft(x1, nfft);
@@ -47,26 +47,43 @@ peaks2 = pick_peaks(Ydb2);
 bounds1 = pick_peak_boundaries(Ydb1, peaks1);
 bounds2 = pick_peak_boundaries(Ydb2, peaks2);
 
+%% step 2 match peaks
+% sort by loudest
+[~, sorted1] = sort(Ydb1(peaks1), 'descend');
+[~, sorted2] = sort(Ydb2(peaks2), 'descend');
 
 
-%% plot
-maxPlotFreq = bin_to_freq(Ndb, fs, nfft);
+%% plot (nth loudest peak)
 plotPeaks1 = bin_to_freq(peaks1, fs, nfft);
-plotPeaks2 = bin_to_freq(peaks2, fs, nfft);
-plotBounds1 = bin_to_freq(bounds1, fs, nfft);
-plotBounds2 = bin_to_freq(bounds2, fs, nfft);
+maxPlotFreq = bin_to_freq(Ndb, fs, nfft);
 faxis = linspace(0, maxPlotFreq, Ndb);
+for n = 1:length(peaks1)
+    plot(faxis, Ydb1); hold on;
+    plot(plotPeaks1(sorted1(n)), Ydb1(peaks1(sorted1(n))), 'r*');
+    hold off;
+    drawnow;
+    pause;
+end
 
-plot(faxis, Ydb1); hold on;
-plot(faxis, Ydb2);
 
-plot(plotPeaks1, Ydb1(peaks1), 'b*', 'MarkerSize', 6);
-plot(plotPeaks2, Ydb2(peaks2), 'r*', 'MarkerSize', 6);
-
-plot(plotBounds1, Ydb1(bounds1), 'bo', 'MarkerSize', 10);
-plot(plotBounds2, Ydb2(bounds2), 'ro', 'MarkerSize', 10);
-
-hold off;
+%% plot (all peaks and valleys)
+% maxPlotFreq = bin_to_freq(Ndb, fs, nfft);
+% plotPeaks1 = bin_to_freq(peaks1, fs, nfft);
+% plotPeaks2 = bin_to_freq(peaks2, fs, nfft);
+% plotBounds1 = bin_to_freq(bounds1, fs, nfft);
+% plotBounds2 = bin_to_freq(bounds2, fs, nfft);
+% faxis = linspace(0, maxPlotFreq, Ndb);
+% 
+% plot(faxis, Ydb1); hold on;
+% plot(faxis, Ydb2);
+% 
+% plot(plotPeaks1, Ydb1(peaks1), 'b*', 'MarkerSize', 6);
+% plot(plotPeaks2, Ydb2(peaks2), 'r*', 'MarkerSize', 6);
+% 
+% plot(plotBounds1, Ydb1(bounds1), 'bo', 'MarkerSize', 10);
+% plot(plotBounds2, Ydb2(bounds2), 'ro', 'MarkerSize', 10);
+% 
+% hold off;
 
 
 
