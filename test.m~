@@ -47,24 +47,18 @@ peaks2 = pick_peaks(Ydb2);
 bounds1 = pick_peak_boundaries(Ydb1, peaks1);
 bounds2 = pick_peak_boundaries(Ydb2, peaks2);
 
-%% step 2, match peaks
+%% step 2 match peaks
 % sort by loudest
 [~, sorted1] = sort(Ydb1(peaks1), 'descend');
 [~, sorted2] = sort(Ydb2(peaks2), 'descend');
 
 %% test...
-
-% index = sorted1(1);
-% loudestPeak = peaks1(index);
-% bounds = bounds1(index,:);
+index = sorted1(1);
+loudestPeak = peaks1(index);
+bounds = bounds1(index,:);
 
 % starting with the loudest peak, do nearest neighbor matching
-% plot(1:length(Ydb1), Ydb1); hold on;
-% plot(1:length(Ydb2), Ydb2);
-% plot(loudestPeak, Ydb1(loudestPeak), 'r*');
-% plot(bounds, Ydb1(bounds), 'go'); 
-% hold off;
-
+plot(1:length(Ydb1)
 % %% plot (nth loudest peak)
 % plotPeaks1 = bin_to_freq(peaks1, fs, nfft);
 % maxPlotFreq = bin_to_freq(Ndb, fs, nfft);
