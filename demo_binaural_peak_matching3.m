@@ -9,7 +9,7 @@ az2 = 55;
 el2 = 0;
 
 %% load audio
-[x1, ~, fs] = load_binaural(az1, el1);
+x1 = load_binaural(az1, el1);
 x2 = load_binaural(az2, el2);
 
 %% do fft
@@ -36,15 +36,11 @@ peaks2 = pick_peaks(Ydb2);
 nPeaks1 = length(peaks1);
 nPeaks2 = length(peaks2);
 
-% get boundaries
-bounds1 = pick_peak_boundaries(Ydb1, peaks1);
-bounds2 = pick_peak_boundaries(Ydb2, peaks2);
-
 %% step 2, match peaks
 % sort by loudest
 [~, s] = sort(Ydb1(peaks1), 'descend');
 
-%% step 3, match nearest neighbors
+% match nearest neighbors
 % at m(n), Ydb1(n) <-> Ydb2(m(n))
 m = zeros(Ndb, 1);
 m(1) = 1;
@@ -68,7 +64,7 @@ for n = 1:nPeaks1
         p2 = [peaks2(k) Ydb2(peaks2(k))];
         
         % distance between p1 and p2
-        D = weighted_distance(p1, p2, [fCost mCost]);
+        D = weighted_distance(p1, p2, [fCost, mCost]);
         
         if D < bestMatch(2)
             bestMatch = [k, D];
@@ -83,6 +79,9 @@ end
 
 m(m~=0) = sort(m(m~=0)); % fix any crossed matches
 
+%\cleanup
+clear s fCost mCost maxDistance bestMatch n k p1 p2 thisPeak D bestPeakIndex;
+
 % find best match for valleys
 lastPeak = 1;
 for n = 2:length(m)
@@ -93,15 +92,35 @@ for n = 2:length(m)
     
     v1 = v1 + (lastPeak - 1);
     v2 = v2 + (m(lastPeak) - 1);
+
+    notLast1 = v1 ~= lastPeak;
+    notLast2 = v2 ~= m(lastPeak);
+    notThis1 = v1 ~= n;
+    notThis2 = v2 ~= m(n);
     
-    if v1 == n; continue; end;
-    if isempty(m(m==v2))
+    if notLast1 && notLast2 && notThis1 && notThis2
         m(v1) = v2;
     end
     
     lastPeak = n;
 end
 
+%\cleanup
+clear n v1 v2 lastPeak notLast1 notLast2 notThis1 notThis2;
+
+% compress m
+% now, Ydb1(m(n, 1)) matches Ydb2(m(n, 2))
+nFeatures = 0;
+temp = zeros(length(m), 2);
+for n = 1:length(m)
+    if m(n) == 0; continue; end;
+    nFeatures = nFeatures + 1;
+    temp(nFeatures, :) = [n, m(n)];
+end
+m = temp(1:nFeatures, :);
+
+%\cleanup
+clear n temp nFeatures;
 
 %% plot
 moveby = 40;
@@ -113,58 +132,14 @@ miny = min([Ydb1; Ydb2]) - 3; maxy = max([Ydb1; Ydb2]) + 3;
 plot(Ydb1, 'Color', 'b'); hold on; axis([minx maxx miny maxy]);
 plot(Ydb2, 'Color', 'r');
 
-for n = 1:Ndb
-    if m(n) == 0; continue; end
-    
-    plot(n, Ydb1(n), 'bo');
-    plot(m(n), Ydb2(m(n)), 'ro');
-    plot([n m(n)], [Ydb1(n) Ydb2(m(n))], 'k:');    
+for n = 1:length(m(:,1))
+    plot(m(n,1), Ydb1(m(n,1)), 'bo');
+    plot(m(n,2), Ydb2(m(n,2)), 'ro');
+    plot(m(n,:), [Ydb1(m(n,1)) Ydb2(m(n,2))], 'k:');    
 end
 
 hold off;
 Ydb2 = Ydb2 + moveby;
 
-% % find best match for valleys
-% lastPeak = 1;
-% for n = 2:length(m)
-%     if m(n) == 0; continue; end;
-%     
-%     [~, valley1] = min(Ydb1(lastPeak:n));       % lowest index between lastPeak and nth peak
-%     [~, valley2] = min(Ydb2(m(lastPeak):m(n))); % lowest index between lastPeak and nth peak
-%     
-%     valley1 = valley1 + (lastPeak - 1);
-%     valley2 = valley2 + (lastPeak - 1);
-%     
-%     m(valley1) = valley2;
-%     
-%     lastPeak = n;
-%     
-%     
-%     %% plot
-%     moveby = 40;
-%     Ydb2 = Ydb2 - moveby; % move this down to see better
-% 
-%     minx = 0; maxx = Ndb + 1;
-%     miny = min([Ydb1; Ydb2]) - 3; maxy = max([Ydb1; Ydb2]) + 3;
-% 
-%     plot(Ydb1, 'Color', 'b'); hold on; axis([minx maxx miny maxy]);
-%     plot(Ydb2, 'Color', 'r');
-% 
-%     for k = 1:Ndb
-%         if m(k) == 0; continue; end
-% 
-%         plot(k, Ydb1(k), 'bo');
-%         plot(m(k), Ydb2(m(k)), 'ro');
-%         plot([k m(k)], [Ydb1(k) Ydb2(m(k))], 'k:');    
-%     end
-%     plot([valley1 m(valley1)], [Ydb1(valley1) Ydb2(valley1)], 'r*');
-%     
-%     hold off;
-%     Ydb2 = Ydb2 + moveby;
-%     drawnow;
-%     pause;
-% end
-
-
-
-
+%\cleanup
+clear moveby minx maxx miny maxy n

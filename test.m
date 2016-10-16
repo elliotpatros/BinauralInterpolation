@@ -12,9 +12,9 @@ clearvars;
 addpath(genpath('.'));
 
 %% user parameters
-az1 = 5;
+az1 = 50;
 el1 = 0;
-az2 = 10;
+az2 = 55;
 el2 = 0;
 
 %% load audio
@@ -45,23 +45,19 @@ peaks2 = pick_peaks(Ydb2);
 nPeaks1 = length(peaks1);
 nPeaks2 = length(peaks2);
 
-% get boundaries
-bounds1 = pick_peak_boundaries(Ydb1, peaks1);
-bounds2 = pick_peak_boundaries(Ydb2, peaks2);
-
 %% step 2, match peaks
 % sort by loudest
 [~, s] = sort(Ydb1(peaks1), 'descend');
 
-% match nearest neighbors
-%     m is the list of matches
-%     at m(n), Ydb1(n) matches Ydb2(m(n))
+% match peaks to nearest neighbors
+% at m(n), Ydb1(n) <-> Ydb2(m(n))
 m = zeros(Ndb, 1);
 m(1) = 1;
 m(Ndb) = Ndb;
 
-fCost = 2;  % cost of frequency distance (scalar)
-mCost = 1;  % cost of magnitude distance (scalar)
+% we're going try to do a cost-based nearest neighbor peak matcher.
+fCost = 2;      % cost of frequency-distance (scalar)
+mCost = 1;      % cost of magnitude-distance (scalar)
 maxDistance = Ndb * max([1 fCost mCost]);
 
 % find best match for nth loudest peak
@@ -92,6 +88,9 @@ end
 
 m(m~=0) = sort(m(m~=0)); % fix any crossed matches
 
+%\cleanup
+clear s fCost mCost maxDistance bestMatch n k p1 p2 thisPeak D bestPeakIndex;
+
 % find best match for valleys
 lastPeak = 1;
 for n = 2:length(m)
@@ -102,14 +101,34 @@ for n = 2:length(m)
     
     v1 = v1 + (lastPeak - 1);
     v2 = v2 + (m(lastPeak) - 1);
+
+    notLast1 = v1 ~= lastPeak;
+    notLast2 = v2 ~= m(lastPeak);
+    notThis1 = v1 ~= n;
+    notThis2 = v2 ~= m(n);
     
-    if v1 == n; continue; end;
-    if isempty(m(m==v2))
+    if notLast1 && notLast2 && notThis1 && notThis2
         m(v1) = v2;
     end
     
     lastPeak = n;
 end
+
+%\cleanup
+clear n v1 v2 lastPeak notLast1 notLast2 notThis1 notThis2;
+
+% compress m
+nFeatures = 0;
+temp = zeros(length(m), 2);
+for n = 1:length(m)
+    if m(n) == 0; continue; end;
+    nFeatures = nFeatures + 1;
+    temp(nFeatures,:) = [n,m(n)];
+end
+m = temp(1:nFeatures,:);
+
+%\cleanup
+clear n temp nFeatures;
 
 %% morph
 weight = 0.5;
