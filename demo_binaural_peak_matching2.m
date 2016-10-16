@@ -46,7 +46,7 @@ bounds2 = pick_peak_boundaries(Ydb2, peaks2);
 [~, sorted2] = sort(Ydb2(peaks2), 'descend');
 
 %% step 3, match nearest neighbors
-% at m1(n), Ydb1(n) <-> Ydb2(m1(n))
+% at m(n), Ydb1(n) <-> Ydb2(m(n))
 m = zeros(Ndb, 1);
 m(1) = 1;
 m(Ndb) = Ndb;
@@ -76,6 +76,9 @@ for n = 1:nPeaks1
     if isempty(m(m==peaks2(c)))
         m(thisPeak) = peaks2(c);
     end
+    
+    plot(D)
+    drawnow;pause;
 end
 
 m(m~=0) = sort(m(m~=0)); % fix any crossed matches

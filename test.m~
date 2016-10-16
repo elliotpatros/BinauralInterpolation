@@ -114,13 +114,8 @@ end
 %% morph
 weight = 0.5;
 
-newYdb = zeros(Ndb, 1);
 % do this a section at a time
-% find last peak and this peak
-% inerpolate thisPeak
-% interpolate from lastPeak + 1 to thisPeak - 1
 lastPeak = 1;
-newYdb(1) = weighted_mean(Ydb1(lastPeak), Ydb2(lastPeak), weight);
 for n = 2:length(m)
     if m(n) == 0; continue; end;
     
@@ -128,15 +123,8 @@ for n = 2:length(m)
     % Ydb1(lastPeak:n)
     % Ydb2(m(lastPeak):m(n))
     % interpolate this slope
-    L1 = (n - lastPeak) + 1;
-    L2 = (m(n) - m(lastPeak)) + 1;
-    sectionL = round(weighted_mean(L1, L2, weight));
+    lvalue = 
 end
-
-% % do this a sample at a time
-% for n = 1:Ndb
-%     
-% end
 
 
 
