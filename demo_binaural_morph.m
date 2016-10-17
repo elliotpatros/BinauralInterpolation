@@ -3,8 +3,6 @@ clearvars;
 addpath(genpath('.'));
 
 [m, Y1, Y2, Ydb1, Ydb2] = make_fake_session;
-Yi1 = imag(Y1(1:end/2));
-Yi2 = imag(Y2(1:end/2));
 
 %% important things
 Ndb = length(Ydb1);
@@ -13,7 +11,8 @@ nFeatures = length(m(:,1));
 nSections = nFeatures - 1;
 
 %% interpolate sections
-weight = 0.5;
+% weight = 0.5;
+for weight = linspace(0, 1, 200)
 newYdb = zeros(size(Ydb1));
 
 % get section start index
@@ -49,3 +48,6 @@ for section = 1:nSections
     newB = round(weighted_mean(b1, b2, weight));
 end
 
+plot([Ydb1 Ydb2 newYdb]);
+drawnow;
+end
