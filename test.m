@@ -155,4 +155,7 @@ for n = 1:LM
     plot3(M(n, :), [0, 1], [YM1(n) YM2(n)], 'k-');
 end
 
+plot3(peaks1, zeros(nPeaks1, 1), Ydb1(peaks1), 'ro');
+plot3(peaks2,  ones(nPeaks2, 1), Ydb2(peaks2), 'ro');
+
 hold off;
