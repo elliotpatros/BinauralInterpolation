@@ -3,11 +3,10 @@ clearvars;
 addpath(genpath('.'));
 
 %% user parameters
-azim1 = 55;
+azim1 = 50;
 elev1 = 0;
-azim2 = 50;
+azim2 = 55;
 elev2 = 0;
-weight = 0.5;
 
 %% load audio
 x1 = load_binaural(azim1, elev1);
@@ -47,9 +46,7 @@ nPeaks2 = length(peaks2);
 
 % match nearest neighbors
 % at m(n), Ydb1(n) matches Ydb2(m(n))
-M = zeros(Ndb, 1);
-M(1) = 1;
-M(Ndb) = Ndb;
+M = [1; zeros(Ndb-2, 1); Ndb];
 
 % find distances between peaks. 
 % starting with the loudest source peak, pick the nearest target pick
@@ -60,8 +57,7 @@ maxDistance = Ndb * max([1, fCost, mCost]);
 % find best match for nth loudest peak
 for n = 1:nPeaks1
     bestMatch = [0, maxDistance];   % searching placeholder [bestIndex, bestValue]
-    nthPeak = peaks1(s(n));         % nth loudest peak index
-    p1 = [nthPeak, Ydb1(nthPeak)];  % nth loudest peak [index, mag]
+    p1 = [peaks1(s(n)), Ydb1(peaks1(s(n)))];  % nth loudest peak [index, mag]
     
     % search for the nearest peak
     for k = 1:nPeaks2
@@ -75,10 +71,9 @@ for n = 1:nPeaks1
     end
     
     % save the closest peak by index...
-    bestPeakIndex = peaks2(bestMatch(1));
     % ...and if this match hasn't been made yet, save it
-    if isempty(M(M==bestPeakIndex))
-        M(nthPeak) = bestPeakIndex;
+    if isempty(M(M==peaks2(bestMatch(1))))
+        M(peaks1(s(n))) = peaks2(bestMatch(1));
     end
 end
 
@@ -86,7 +81,7 @@ end
 M(M~=0) = sort(M(M~=0));
 
 %\cleanup
-clear s fCost mCost maxDistance bestMatch n k p1 p2 nthPeak D bestPeakIndex;
+clear s fCost mCost maxDistance bestMatch n k p1 p2 D;
 
 %% step 2b, find best min match between peaks
 lastPeak = 1;
@@ -111,48 +106,58 @@ for n = 2:length(M)
     lastPeak = n;
 end
 
+% compress all matches
+allMatches = [find(M~=0), M(M~=0)];
+
 %\cleanup
 clear n v1 v2 lastPeak notLast1 notLast2 notThis1 notThis2;
 
 %% step 2c, expand m
-tempM = [1, 1];
-for n = 2:Ndb
-    if M(n) ~= 0
-        
-        range1 = tempM(end, 1):n;
-        range2 = tempM(end, 2):M(n);
-        
-        if length(range2) < length(range1)
-            newRange = range1;
-        else
-            newRange = range2;
-        end
-        
-        section1 = linspace(range1(1), range1(end), length(newRange));
-        section2 = linspace(range2(1), range2(end), length(newRange));
-        
-        tempM = [tempM; [section1(2:end)', section2(2:end)']];
-    end
+% so the general idea is to interpolate bins between important matched
+% features. i should go, a feature at a time, and fill in the blanks.
+temp = allMatches(1,:);
+for n = 2:length(allMatches)
+    b1 = allMatches(n - 1, 1);
+    e1 = allMatches(n,     1);
+    b2 = allMatches(n - 1, 2);
+    e2 = allMatches(n,     2);
+    
+    L1 = (e1 - b1) + 1;
+    L2 = (e2 - b2) + 1;
+    newL = max(L1, L2);
+    
+    intermediateMatches = [linspace(b1,e1,newL)', linspace(b2,e2,newL)'];
+    temp = [temp; intermediateMatches(2:end,:)];
 end
-M = tempM;
+
+M = temp;
+% intermediateMatches1 = setdiff(M(:,1), allMatches(:,1), 'stable');
+% intermediateMatches2 = setdiff(M(:,2), allMatches(:,2), 'stable');
 
 %\cleanup
-clear tempM from thru n maxL newRange;
+clear temp n b1 e1 b2 e2 L1 L2 newL intermediateMatches;
 
-%% step 3, morph
-YM1 = linear_interpolation(Ydb1, M(:, 1));
-YM2 = linear_interpolation(Ydb2, M(:, 2));
+%% morph
+YM1 = linear_interpolation(Ydb1, M(:,1));
+YM2 = linear_interpolation(Ydb2, M(:,2));
 
 %% plot
-LM = length(M);
-x = linspace(1, Ndb, LM)'; x = [x, x];
-y = [zeros(LM, 1), ones(LM, 1)];
-z = [YM1, YM2];
-plot3((1:Ndb)', zeros(Ndb, 1), Ydb1, 'k-', 'LineWidth', 2); hold on;
-plot3((1:Ndb)', ones(Ndb, 1), Ydb2, 'k-', 'LineWidth', 2);
+xNdb = (1:Ndb)';
+yDb = ones(Ndb, 1);
+ym = ones(length(allMatches), 1);
+ya = ones(length(M), 1);
+Ydbs = [Ydb1, Ydb2];
 
-for n = 1:LM
-    plot3(M(n, :), [0, 1], [YM1(n) YM2(n)], 'k-');
-end
+plot3([xNdb,xNdb], [yDb*0,yDb], Ydbs, '-', 'LineWidth', 2); 
+hold on;
+plot3(M', [ya*0, ya]', [YM1, YM2], 'k:');
+plot3(allMatches(:,1)', ym'*0, Ydb1(allMatches(:,1)), 'k.', 'MarkerSize', 20);
+plot3(allMatches(:,2)', ym', Ydb2(allMatches(:,2)), 'k.', 'MarkerSize', 20);
+plot3(allMatches', [ym*0, ym]', [Ydb1(allMatches(:,1)), Ydb2(allMatches(:,2))], 'k');
 
+axis([0, Ndb+1, -0.05, 1.05, min(min(Ydbs-3)), max(max(Ydbs+3))]);
+view(0, 35);
 hold off;
+
+%\cleanup
+clear xNdb yDb ym ya Ydbs;
