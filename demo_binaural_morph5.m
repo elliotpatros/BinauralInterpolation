@@ -158,16 +158,25 @@ clear temp n b1 e1 b2 e2 L1 L2 newL l1 l2 i1 i2;
 YM1 = linear_interpolation(Ydb1, M(:,1));
 YM2 = linear_interpolation(Ydb2, M(:,2));
 
-% for plotting, delete later
-plotx1 = [1:Ndb; 1:Ndb; 1:Ndb]';
-plotx2 = M';
-ploty2 = [zeros(1, length(M)); ones(1, length(M))];
-plotz2 = [YM1, YM2];
+%% plot
+xNdb = (1:Ndb)';
+yDb = ones(Ndb, 1);
+ym = ones(length(allMatches), 1);
+ya = ones(length(M), 1);
+Ydbs = [Ydb1, Ydb2];
+
+plot3([xNdb,xNdb], [yDb*0,yDb], Ydbs, '-', 'LineWidth', 2); 
+hold on;
+plot3(M', [ya*0, ya]', [YM1, YM2], 'k:');   % all connecting lines
+plot3(allMatches(:,1)', ym'*0, Ydb1(allMatches(:,1)), 'k.', 'MarkerSize', 20);  % peaks1
+plot3(allMatches(:,2)', ym', Ydb2(allMatches(:,2)), 'k.', 'MarkerSize', 20);    % peaks2
+plot3(allMatches', [ym*0, ym]', [Ydb1(allMatches(:,1)), Ydb2(allMatches(:,2))], 'k'); % connecting peaks
+
+axis([0, Ndb+1, -0.05, 1.05, min(min(Ydbs-3)), max(max(Ydbs+3))]);
+view(2, 35);
 
 %% step 3b, morph
-clf;
-pause;
-for weight = linspace(0, 1, 200)
+weight = 0.5;
 newYdb = zeros(size(Ydb1));
 Yindex = 2;
 for e = 2:length(M) - 1
@@ -186,34 +195,18 @@ for e = 2:length(M) - 1
     if bline(1) <= Yindex && Yindex <= eline(1)
         slope = (eline(3) - bline(3)) / (eline(1) - bline(1));
         z = slope * (Yindex - bline(1)) + bline(3);
+        
+        
+        % plot
+        plot3([bline(1), eline(1)], [bline(2), eline(2)], [bline(3), eline(3)], 'r*', 'MarkerSize', 10); % front and back of this segment
+        plot3(Yindex, weight, z, 'b.', 'MarkerSize', 20); % new mag
+        drawnow;
+        pause;
+        %\plot
+    
         newYdb(Yindex) = z;
         Yindex = Yindex + 1;
     end
 end
-
-newYdb(1) = weighted_mean(Ydb1(1), Ydb2(1), weight);
-newYdb(end) = weighted_mean(Ydb1(end), Ydb2(end), weight);
-
-%\cleanup
-clear Yindex e b bEdge eEdge A B C D v1 v2 cp K z;
-
-%% plot
-subplot(3, 1, [1, 2]);
-ploty1 = [zeros(Ndb, 1), ones(Ndb, 1) * weight, ones(Ndb, 1)];
-plotz1 = [Ydb1, newYdb, Ydb2];
-plot3(plotx1, ploty1, plotz1, 'r.', 'MarkerSize', 20); hold on;
-plot3(plotx2, ploty2, plotz2, 'k:.');
-view(0, 35);
-% view(-90, 90);
+    
 hold off;
-subplot(313);
-plot(plotz1);
-drawnow;
-
-end
-
-% this isn't right still. i need to interpolate the slope and the x
-% position, then find the point on the line.
-
-%\cleanup
-clear x y z plotx1 plotx2 ploty1 ploty2 plotz1 plotz2;
