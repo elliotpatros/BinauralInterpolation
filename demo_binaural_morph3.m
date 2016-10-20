@@ -158,6 +158,7 @@ clear temp n b1 e1 b2 e2 L1 L2 newL l1 l2 i1 i2;
 YM1 = linear_interpolation(Ydb1, M(:,1));
 YM2 = linear_interpolation(Ydb2, M(:,2));
 
+
 %% plot
 xNdb = (1:Ndb)';
 yDb = ones(Ndb, 1);
@@ -175,28 +176,54 @@ plot3(allMatches', [ym*0, ym]', [Ydb1(allMatches(:,1)), Ydb2(allMatches(:,2))], 
 axis([0, Ndb+1, -0.05, 1.05, min(min(Ydbs-3)), max(max(Ydbs+3))]);
 view(2, 35);
 
-%% morph
-weight = 0.5;
-b = 1;
-for n = 1:Ndb
-    e = b;
-    while weighted_mean(M(e, 1), M(e, 2), weight) < n
-        e = e + 1;
-        b = e - 1;
-    end
+
+%% step 3b, morph
+weight = 0.125;
+newYdb = zeros(size(Ydb1));
+Yindex = 2;
+for e = 2:length(M) - 1
+    b = e - 1;
     
-    % plot
-    x = [M(b,1),M(e,1);M(b,2),M(e,2)];
-    y = [0,0;1,1];
-    z = [YM1(b),YM1(e);YM2(b),YM2(e)];
-    surf(x, y, z, 'FaceColor', 'c');
-    plot3([n n], [weight, weight], [100, -100], 'k-');
-%     view(-90, 90);
-    drawnow;
-    pause;
+    % test line \
+    % test line \
+    % test quadrilateral
+    bEdge = weighted_mean(M(b,1), M(b,2), weight);
+    eEdge = weighted_mean(M(e,1), M(e,2), weight);
+    % if the current x,y intersect with this quadrilateral
+    if bEdge <= Yindex && Yindex <= eEdge
+        % definition of plane
+        A = [M(b, 1), 0, YM1(b)];
+        B = [M(e, 1), 0, YM1(e)];
+        C = [M(b, 2), 1, YM2(b)];
+        D = [M(e, 2), 1, YM2(e)];
+        
+        % is our point in triangle 2 (BCD) ?
+        if P_in_triangle([Yindex, weight], B, C, D)
+            A = D;
+        else
+            D = A;
+        end
+        
+        % find z on plane given x, y
+        v1 = A - B;
+        v2 = A - C;
+        cp = cross(v1, v2);
+        K = cp(1)*A(1) + cp(2)*A(2) + cp(3)*A(3);
+        z = (1/cp(3)) * (K - cp(1)*Yindex - cp(2)*weight);
+        
+        newYdb(Yindex) = z;
+        
+        % plot
+        surf([A(1), B(1); C(1), D(1)], [A(2), B(2); C(2), D(2)], [A(3), B(3); C(3), D(3)], 'FaceColor', 'c');
+
+        plot3(Yindex, weight, z, 'r.', 'MarkerSize', 20);
+        drawnow;
+        pause;
+        %\plot
+        
+        Yindex = Yindex + 1;
+    end
 end
 
-hold off;
-
-%\cleanup
-clear xNdb yDb ym ya Ydbs LM b n e1 e2 e x y z;
+newYdb(1) = weighted_mean(Ydb1(1), Ydb2(1), weight);
+newYdb(end) = weighted_mean(Ydb1(end), Ydb2(end), weight);
