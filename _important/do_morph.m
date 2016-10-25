@@ -1,4 +1,4 @@
-function newx = do_morph(x1, x2, weight, fs)
+function newx = do_morph(x1, x2, weight)
 
 %% do fft
 nfft = length(x1);
@@ -180,6 +180,6 @@ newMag = [newMag; newMag(end-1:-1:2)];
 newPhase = weighted_mean(Yph1, Yph2, weight);
 newPhase = [newPhase; -1.*newPhase(end-1:-1:2)];
 
-newx = osc_bank(newMag, newPhase, fs);
+newx = fdosc_bank(newMag, newPhase);
 
 end

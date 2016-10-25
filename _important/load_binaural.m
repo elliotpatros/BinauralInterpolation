@@ -3,6 +3,10 @@ function [left, right, fs] = load_binaural(azimuth, elevation)
 
 load HRIR.mat hrir_l hrir_r;
 
+if nargin == 1
+    elevation = 0;
+end
+
 % get closest azimuth
 azimuths = [-80 -65 -55 -45:5:45 55 65 80];
 [~, az] = min(abs(azimuths - azimuth));
