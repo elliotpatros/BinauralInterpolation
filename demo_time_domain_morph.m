@@ -3,8 +3,8 @@ clearvars;
 addpath(genpath('.'));
 
 %% user parameters
-azim1 = 0;
-azim2 = 5;
+azim1 = 50;
+azim2 = 55;
 
 nFrames = 150;
 
@@ -22,7 +22,7 @@ for n = [1:nFrames, nFrames-1:-1:1]
     new_l = do_morph(l1, l2, weight);
     
     plot([l1 new_l l2]);
-    axis([1 Lhrir -0.5 0.5]);
+%     axis([1 Lhrir -0.5 0.5]);
     drawnow;
     if n == nFrames
         pause(0.5);

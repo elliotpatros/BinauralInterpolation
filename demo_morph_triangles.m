@@ -1,14 +1,38 @@
-function newx = do_morph(x1, x2, weight)
+%% reset
+clearvars;
+addpath(genpath('.'));
+
+%% user parameters
+azim1 = 50;
+elev1 = 0;
+azim2 = 55;
+elev2 = 0;
+
+%% load audio
+x1 = load_binaural(azim1, elev1);
+x2 = load_binaural(azim2, elev2);
 
 %% do fft
-nfft = length(x1);
-Ndb = nfft / 2 + 1;
+% get lengths of input signals
+L = length(x1);
+nfft = L;
+
+% complex fft
 Y1 = fft(x1, nfft);
 Y2 = fft(x2, nfft);
-Ydb1 = gain_to_dB(abs(Y1(1:Ndb)));
-Ydb2 = gain_to_dB(abs(Y2(1:Ndb)));
-Yph1 = unwrap(angle(Y1(1:Ndb)));
-Yph2 = unwrap(angle(Y2(1:Ndb)));
+
+% real part
+Yr1 = abs(Y1(1:end/2));
+Yr2 = abs(Y2(1:end/2));
+
+% imaginary part
+Yi1 = imag(Y1);
+Yi2 = imag(Y2);
+
+% convert real part to dB
+Ydb1 = gain_to_dB(Yr1);
+Ydb2 = gain_to_dB(Yr2);
+Ndb = length(Ydb1);
 
 %% step 1, find peaks
 peaks1 = pick_peaks(Ydb1);
@@ -134,36 +158,69 @@ clear temp n b1 e1 b2 e2 L1 L2 newL l1 l2 i1 i2;
 YM1 = linear_interpolation(Ydb1, M(:,1));
 YM2 = linear_interpolation(Ydb2, M(:,2));
 
+
+%% plot
+xNdb = (1:Ndb)';
+yDb = ones(Ndb, 1);
+ym = ones(length(allMatches), 1);
+ya = ones(length(M), 1);
+Ydbs = [Ydb1, Ydb2];
+
+plot3([xNdb,xNdb], [yDb*0,yDb], Ydbs, '-', 'LineWidth', 2); 
+hold on;
+plot3(M', [ya*0, ya]', [YM1, YM2], 'k:');
+plot3(allMatches(:,1)', ym'*0, Ydb1(allMatches(:,1)), 'k.', 'MarkerSize', 20);
+plot3(allMatches(:,2)', ym', Ydb2(allMatches(:,2)), 'k.', 'MarkerSize', 20);
+plot3(allMatches', [ym*0, ym]', [Ydb1(allMatches(:,1)), Ydb2(allMatches(:,2))], 'k');
+
+axis([0, Ndb+1, -0.05, 1.05, min(min(Ydbs-3)), max(max(Ydbs+3))]);
+view(2, 35);
+
+
 %% step 3b, morph
+weight = 0.5;
 newYdb = zeros(size(Ydb1));
 Yindex = 2;
-FREQ = 1; MAG = 2;  % helper indices
 for e = 2:length(M) - 1
     b = e - 1;
     
-    % this surface (corner points)
-    % b === beginning (closer to bin 1)
-    % e === ending (closer to bin Ndb)
-    % suffix 1 is for weight = 0
-    % suffix 2 is for weight = 1
-    % finally, as a note, B1(1) is the frequency, B1(2) is the magnitude,
-    % weight is not in here, but it should be. the problem is flattened in
-    % the representation below.
-    B1 = [M(b, 1), YM1(b)];
-    E1 = [M(e, 1), YM1(e)];
-    B2 = [M(b, 2), YM2(b)];
-    E2 = [M(e, 2), YM2(e)];
+    % test line \
+    % test line \
+    % test quadrilateral
+    bEdge = weighted_mean(M(b,1), M(b,2), weight);
+    eEdge = weighted_mean(M(e,1), M(e,2), weight);
+    % if the current x,y intersect with this quadrilateral
+    if bEdge <= Yindex && Yindex <= eEdge
+        % definition of plane
+        A = [M(b, 1), 0, YM1(b)];
+        B = [M(e, 1), 0, YM1(e)];
+        C = [M(b, 2), 1, YM2(b)];
+        D = [M(e, 2), 1, YM2(e)];
+        
+        % is our point in triangle 2 (BCD) ?
+        if P_in_triangle([Yindex, weight], B, C, D)
+            A = D;
+        else
+            D = A;
+        end
+        
+        % find z on plane given x, y
+        v1 = A - B;
+        v2 = A - C;
+        cp = cross(v1, v2);
+        K = cp(1)*A(1) + cp(2)*A(2) + cp(3)*A(3);
+        z = (1/cp(3)) * (K - cp(1)*Yindex - cp(2)*weight);
+        
+        newYdb(Yindex) = z;
+        
+        % plot
+        surf([A(1), B(1); C(1), D(1)], [A(2), B(2); C(2), D(2)], [A(3), B(3); C(3), D(3)], 'FaceColor', 'c');
+
+        plot3(Yindex, weight, z, 'r.', 'MarkerSize', 20);
+        drawnow;
+        pause;
     
-    % points between line segments that connect Y1 to Y2
-    bPoint = weighted_mean(B1, B2, weight);
-    ePoint = weighted_mean(E1, E2, weight);
     
-    % if the new Y index that we're looking for is between this line
-    % segment, then figure out the elevation (or magnitude) at the point
-    % (Yindex, weight, elevation).
-    if bPoint(FREQ) <= Yindex && Yindex <= ePoint(FREQ)
-        slope = (ePoint(MAG) - bPoint(MAG)) / (ePoint(FREQ) - bPoint(FREQ));
-        newYdb(Yindex) = slope * (Yindex - bPoint(FREQ)) + bPoint(MAG);
         Yindex = Yindex + 1;
     end
 end
@@ -171,15 +228,7 @@ end
 newYdb(1) = weighted_mean(Ydb1(1), Ydb2(1), weight);
 newYdb(end) = weighted_mean(Ydb1(end), Ydb2(end), weight);
 
-%\cleanup
-clear Yindex FREQ WEIGHT MAG e b B1 E1 B2 E2 bPoint ePoint slope;
-
-%% return result
-newMag = dB_to_gain(newYdb);
-newMag = [newMag; newMag(end-1:-1:2)];
-newPhase = wrapToPi(weighted_mean(Yph1, Yph2, weight));
-newPhase = [newPhase; -1.*newPhase(end-1:-1:2)];
-
-newx = fdosc_bank(newMag, newPhase);
-
-end
+% plot([Ydb1, Ydb2, newYdb]);
+% drawnow;
+% pause;
+% end
