@@ -38,7 +38,6 @@ for n = 1:nPositions
     
     % filter this block of input with new filters
     block = ((n - 1) * Lhrir + 1):(n * Lhrir);
-    
     [lx, filter_state(:,1)] = filter(new_l, 1, x(block), filter_state(:,1));
     [rx, filter_state(:,2)] = filter(new_r, 1, x(block), filter_state(:,2));
     y(block, :) = [lx, rx];
