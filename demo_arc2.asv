@@ -3,17 +3,17 @@ addpath(genpath('.'));
 
 [l1,~,fs] = load_binaural(0);
 Lhrir = length(l1); clear l1;
-
-dur = 10;
+dur = 2;
 L = fs * dur;
-x = randn(L, 1);
-y = zeros(L, 2);
 
 nPositions = L / Lhrir;
 azims = -45:5:45;
 interp_azims = linspace(-45, 45, nPositions);
 lastClosest = zeros(1, 2);
-filter_state = zeros(Lhrir-1,2);
+
+x = randn(L, 1);
+y = zeros(L, 2);
+filter_state = zeros(2,2);
 for n = 1:nPositions
     % find the two closest positions (az1 and az2) from the desired position (azim)
     azim = interp_azims(n);
@@ -40,9 +40,7 @@ for n = 1:nPositions
     % filter this block of input with new filters
     block = ((n - 1) * Lhrir + 1):(n * Lhrir);
     
-    [lx, filter_state(:,1)] = filter(new_l, 1, x(block), filter_state(:,1));
-    [rx, filter_state(:,2)] = filter(new_r, 1, x(block), filter_state(:,2));
-    y(block, :) = [lx, rx];
+    y(block, :) = [filter(new_l, 1, x(block)), filter(new_r, 1, x(block))];
     
     % set up next loop
     lastClosest = closest;
@@ -53,4 +51,4 @@ for n = 1:nPositions
 end
 
 soundsc(y, fs);
-clear block c filter_state interp_azims lastClosest n temp;
+% clear c temp Lhrir Ly newstuff x_range Ln;

@@ -4,9 +4,8 @@ addpath(genpath('.'));
 [l1,~,fs] = load_binaural(0);
 Lhrir = length(l1); clear l1;
 
-dur = 10;
-L = fs * dur;
-x = randn(L, 1);
+x = audioread('electric_razor.wav');
+L = length(x);
 y = zeros(L, 2);
 
 nPositions = L / Lhrir;
@@ -49,8 +48,8 @@ for n = 1:nPositions
     
     %% update progress
     clc;
-    disp([num2str(n*100/nPositions), '%']);
+    disp([num2str(round(n*100/nPositions, 1)), '%']);
 end
 
 soundsc(y, fs);
-clear block c filter_state interp_azims lastClosest n temp;
+% clear block c filter_state interp_azims lastClosest n temp;
