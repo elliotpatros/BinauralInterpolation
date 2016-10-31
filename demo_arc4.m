@@ -52,5 +52,5 @@ for n = 1:nPositions
     clc;
     disp([num2str(round(n*100/nPositions, 1)), '%']);
 end
-soundsc(y, fs);
+% soundsc(y, fs);
 % clear block c filter_state interp_azims lastClosest n temp;
