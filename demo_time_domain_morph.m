@@ -15,7 +15,9 @@ l2 = load_binaural(azim2, 0);
 Lhrir = length(l1);
 
 %% morph
+pausefor = 0.5;
 clf; pause;
+while true
 for n = [1:nFrames, nFrames-1:-1:1]
     weight = (n - 1) / (nFrames - 1);   % weight from 0 to 1 over nFrames
     
@@ -25,7 +27,10 @@ for n = [1:nFrames, nFrames-1:-1:1]
 %     axis([1 Lhrir -0.5 0.5]);
     drawnow;
     if n == nFrames
-        pause(0.5);
+        pause(pausefor);
     end
+end
+
+pause(pausefor);
 end
 

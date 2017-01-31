@@ -4,7 +4,7 @@ addpath(genpath('.'));
 [l1,~,fs] = load_binaural(0);
 Lhrir = length(l1); clear l1;
 
-x = audioread('electric_razor.wav');
+x = audioread('electric_razor.wav'); %randn(fs*7, 1); %
 L = length(x);
 y = zeros(L, 2);
 

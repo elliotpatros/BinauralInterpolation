@@ -1,4 +1,4 @@
-function D = distance(pos1, pos2)
+function D = distance2D(pos1, pos2)
 
 D = sqrt(sum((pos2 - pos1).^2));
 

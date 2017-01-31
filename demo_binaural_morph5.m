@@ -1,4 +1,4 @@
-%% reset
+f%% reset
 clearvars;
 addpath(genpath('.'));
 
