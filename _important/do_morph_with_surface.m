@@ -1,4 +1,4 @@
-function newx = do_morph_with_surface(x1, x2, M, weight)
+function newx = do_morph_with_surface(x1, x2, M, weight, l3)
 
 %% do fft
 nfft = length(x1);
@@ -14,7 +14,11 @@ Yph2 = unwrap(angle(Y2(1:Ndb)));
 YM1 = linear_interpolation(Ydb1, M(:,1));
 YM2 = linear_interpolation(Ydb2, M(:,2));
 
-%% morph
+%% make interpolated Yph's
+YMph1 = linear_interpolation(Yph1, M(:,1));
+YMph2 = linear_interpolation(Yph2, M(:,2));
+
+%% morph freq
 newYdb = zeros(size(Ydb1));
 Yindex = 2;
 FREQ = 1; MAG = 2;  % helper indices
@@ -50,11 +54,45 @@ end
 
 newYdb(1) = weighted_mean(Ydb1(1), Ydb2(1), weight);
 newYdb(end) = weighted_mean(Ydb1(end), Ydb2(end), weight);
+newMag = dB_to_gain(newYdb);
+
+%% morph phase
+newPhase = zeros(size(Yph1));
+Yindex = 2;
+PHA = MAG; % helper indices
+for e = 2:length(M)
+    b = e - 1;
+    
+    B1 = [M(b, 1), YMph1(b)];
+    E1 = [M(e, 1), YMph1(e)];
+    B2 = [M(b, 2), YMph2(b)];
+    E2 = [M(e, 2), YMph2(e)];
+    
+    bPoint = weighted_mean(B1, B2, weight);
+    ePoint = weighted_mean(E1, E2, weight);
+    
+    if bPoint(FREQ) <= Yindex && Yindex <= ePoint(FREQ)
+        slope = (ePoint(PHA) - bPoint(PHA)) / (ePoint(FREQ) - bPoint(FREQ));
+        newPhase(Yindex) = slope * (Yindex - bPoint(FREQ)) + bPoint(PHA);
+        Yindex = Yindex + 1;
+    end
+end
+
+newPhase(1) = weighted_mean(Yph1(1), Yph2(1), weight);
+newPhase(end) = weighted_mean(Yph1(end), Yph2(end), weight);
+
+
+%% plot result (compare to linear)
+Yph3 = unwrap(angle(fft(l3)));
+Yph3 = Yph3(1:length(Yph2));
+morphed_diff = Yph3 - newPhase;
+weighted_diff = Yph3 - weighted_mean(Yph1, Yph2, weight);
+plot([morphed_diff weighted_diff]);
+legend('morphed', 'linear');
+
 
 %% return result
-newMag = dB_to_gain(newYdb);
 newMag = [newMag; newMag(end-1:-1:2)];
-newPhase = wrapToPi(weighted_mean(Yph1, Yph2, weight));
 newPhase = [newPhase; -1.*newPhase(end-1:-1:2)];
 
 newx = fdosc_bank(newMag, newPhase);
