@@ -3,9 +3,9 @@ clearvars;
 addpath(genpath('.'));
 
 %% user parameters
-azim1 = 50;
+azim1 = 5;
 elev1 = 0;
-azim2 = 55;
+azim2 = 10;
 elev2 = 0;
 
 %% load audio
@@ -174,13 +174,17 @@ Ydbs = [Ydb1, Ydb2];
 plot3([xNdb,xNdb], [yDb*0,yDb], Ydbs, '-', 'LineWidth', 2); 
 hold on;
 plot3(M', [ya*0, ya]', [YM1, YM2], 'k:');
-plot3(allMatches(:,1)', ym'*0, Ydb1(allMatches(:,1)), 'k.', 'MarkerSize', 20);
-plot3(allMatches(:,2)', ym', Ydb2(allMatches(:,2)), 'k.', 'MarkerSize', 20);
+% plot3(allMatches(:,1)', ym'*0, Ydb1(allMatches(:,1)), 'k.', 'MarkerSize', 20);
+% plot3(allMatches(:,2)', ym', Ydb2(allMatches(:,2)), 'k.', 'MarkerSize', 20);
 plot3(allMatches', [ym*0, ym]', [Ydb1(allMatches(:,1)), Ydb2(allMatches(:,2))], 'k');
 
 axis([0, Ndb+1, -0.05, 1.05, min(min(Ydbs-3)), max(max(Ydbs+3))]);
-view(0, 35);
+view(2, 24);
 hold off;
+grid on;
+xlabel('frequency');
+ylabel('weight');
+zlabel('magnitude');
 
 %\cleanup
 clear xNdb yDb ym ya Ydbs;
