@@ -8,7 +8,7 @@ addpath(genpath('.'));
 azims = -45:5:45;
 x = load_binaural(0);
 
-nAzims = length(azims);
+nAzims = 3; %length(azims);
 L = length(x);
 
 % phases = zeros(nAzims, L);
