@@ -1,19 +1,20 @@
 clearvars;
 addpath(genpath('.'));
 
-% plot out how all the phases look together in 3D
-% right now, this plot takes a look at the 1st derivative of phase from
-% bin0 to nyquist
+% find out whether itd or linear interpolation is better for phase by
+% checking the RMS of the error of both for the entire set.
 
-azims = -35:5:-25;
-x = load_binaural(0);
+A = -40:5:40;
+itd_error = zeros(1, length(A));
+lin_error = zeros(1, length(A));
 
-nAzims = length(azims);
-L = length(x);
-weight = 0.5;
-clear x;
-
+for n = 1:length(A)
+azims = [A(n)-5, A(n), A(n)+5];
 x1 = load_binaural(azims(1));
+
+L = length(x1);
+weight = 0.5;
+
 x2 = load_binaural(azims(3));
 xtruth = load_binaural(azims(2));
 
@@ -25,14 +26,16 @@ p2 = p2(1:end/2 + 1);
 ptruth = ptruth(1:end/2 + 1);
 
 % interpolate linearly
-plinear = weighted_mean(p1, p2, weight);
+plin = weighted_mean(p1, p2, weight);
 
 % interpolate ITD
 weight = (itd(azims(2)) - itd(azims(1))) ./ (itd(azims(3)) - itd(azims(1)));
+if isinf(weight)
+    weight = 0.5;
+end
+
 pitd = weighted_mean(p1, p2, weight);
 
-% plot
-nT = 1:length(ptruth);
-plot(nT, [pitd - ptruth, plinear - ptruth])
-% plot(nT, ptruth, nT, pinter, nT, plinear);
-% legend('truth', 'interpolated', 'linear');
+itd_error(n) = rms(ptruth - pitd);
+lin_error(n) = rms(ptruth - plin);
+end
