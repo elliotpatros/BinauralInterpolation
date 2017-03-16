@@ -1,4 +1,4 @@
-function newx = do_morph_with_surface(x1, x2, M, weight, l3)
+function [linx, morphx, linPhase, morphPhase] = do_morph_with_surface(x1, x2, M, weight, l3)
 
 %% do fft
 nfft = length(x1);
@@ -57,7 +57,7 @@ newYdb(end) = weighted_mean(Ydb1(end), Ydb2(end), weight);
 newMag = dB_to_gain(newYdb);
 
 %% morph phase
-newPhase = zeros(size(Yph1));
+morphPhase = zeros(size(Yph1));
 Yindex = 2;
 PHA = MAG; % helper indices
 for e = 2:length(M)
@@ -73,28 +73,39 @@ for e = 2:length(M)
     
     if bPoint(FREQ) <= Yindex && Yindex <= ePoint(FREQ)
         slope = (ePoint(PHA) - bPoint(PHA)) / (ePoint(FREQ) - bPoint(FREQ));
-        newPhase(Yindex) = slope * (Yindex - bPoint(FREQ)) + bPoint(PHA);
+        morphPhase(Yindex) = slope * (Yindex - bPoint(FREQ)) + bPoint(PHA);
         Yindex = Yindex + 1;
     end
 end
 
-newPhase(1) = weighted_mean(Yph1(1), Yph2(1), weight);
-newPhase(end) = weighted_mean(Yph1(end), Yph2(end), weight);
-
+morphPhase(1) = weighted_mean(Yph1(1), Yph2(1), weight);
+morphPhase(end) = weighted_mean(Yph1(end), Yph2(end), weight);
+linPhase = weighted_mean(Yph1, Yph2, weight);
 
 %% plot result (compare to linear)
 Yph3 = unwrap(angle(fft(l3)));
 Yph3 = Yph3(1:length(Yph2));
-morphed_diff = Yph3 - newPhase;
-weighted_diff = Yph3 - weighted_mean(Yph1, Yph2, weight);
+morphed_diff = Yph3 - morphPhase;
+weighted_diff = Yph3 - linPhase;
 plot([morphed_diff weighted_diff]);
 legend('morphed', 'linear');
 
 
 %% return result
 newMag = [newMag; newMag(end-1:-1:2)];
-newPhase = [newPhase; -1.*newPhase(end-1:-1:2)];
+morphPhase = unwrap(wrapToPi([morphPhase; -1.*morphPhase(end-1:-1:2)]));
+% morphPhase = unwrap([morphPhase; -1.*morphPhase(end-1:-1:2)]);
 
-newx = fdosc_bank(newMag, newPhase);
+linPhase = unwrap(wrapToPi([linPhase; -1.*linPhase(end-1:-1:2)]));
+% linPhase = unwrap([linPhase; -1.*linPhase(end-1:-1:2)]);
+
+% morphPhase = [morphPhase; -1.*morphPhase(end-1:-1:2)];
+% linPhase = [linPhase; -1.*linPhase(end-1:-1:2)];
+
+linx = fdosc_bank(newMag, linPhase);
+morphx = fdosc_bank(newMag, morphPhase);
 
 end
+
+
+
